@@ -11,16 +11,18 @@ module System.RaspberryPi.GPIO (
     
 --FFI wrapper over the I2C portions of the BCM2835 library by ..., also some utility functions to make reading and writing simpler
 
-import I2cTypes
 import Foreign
 import Foreign.C
 import Foreign.C.String
 import qualified Data.ByteString as BS
+import Data.Either
 
 
 ------------------------------------------------------------------------------------------------------------------------------------
 -------------------------------------------Foreign imports--------------------------------------------------------------------------
- --inits the i2c pins
+
+------------------------------------------- I2C functions --------------------------------------------------------------------------
+--inits the i2c pins
 foreign import ccall unsafe "bcm2835.h bcm2835_i2c_begin" initI2C :: IO ()
 --resets the i2c pins
 foreign import ccall unsafe "bcm2835.h bcm2835_i2c_end"   endI2C  :: IO ()
@@ -43,8 +45,9 @@ foreign import ccall unsafe "bcm2835.h bcm2835_i2c_read_register_rs" c_writeRead
 -- const char * is in Haskell een CString
 
 ------------------------------------------------------------------------------------------------------------------------------------
--------------------------------------------Utility functions------------------------------------------------------------------------
+-------------------------------------------Exportable functions---------------------------------------------------------------------
 
+------------------------------------------- I2C functions --------------------------------------------------------------------------
 setI2cAddress :: Address -> IO ()
 setI2cAddress a = c_setSlaveAddressI2C $ fromIntegral a
 
@@ -73,14 +76,12 @@ readI2C address num = allocaBytes (num+1) $ \buf -> do --is the +1 necessary??
 --writes a bytestring containing a register address to the specified  (i2c) address, then reads num bytes from it, using the repeated start i2c method
 writeReadI2C :: Address -> BS.ByteString -> Int -> IO (Bool,BS.ByteString) 
 writeReadI2C address by num = BS.useAsCString by $ \bs -> do --marshall the register-containing bytestring
-	allocaBytes (num+1) $ \buf -> do	--aloocate a buffer for the response
+	allocaBytes (num+1) $ \buf -> do	--allocate a buffer for the response
 		setI2cAddress address
 		readresult <- c_writeReadI2C bs buf num
 		case readresult of
-		0x01 -> return (False, "Received a NACK.")
-		0x02 -> return (False, "Received Clock Stretch Timeout.")
-		0x04 -> return (False, "Not all data was read.")
+		0x01 -> return (Left "Received a NACK.")
+		0x02 -> return (Left "Received Clock Stretch Timeout.")
+		0x04 -> return (Left "Not all data was read.")
 		0x00 -> do	bs <- BS.packCString buf --convert C buffer to a bytestring
-					return (True, bs)
-    
-main = print "piglet" -- compiles!
+					return (Right bs)
