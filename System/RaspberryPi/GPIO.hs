@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, ForeignFunctionInterface #-}
 module System.RaspberryPi.GPIO (
     --general
     withGPIO,
