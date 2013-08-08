@@ -3,12 +3,12 @@
 
 name:                HPi
 version:             0.1.0.0
-synopsis:            GPIO functions for the Raspberry Pi
+synopsis:            GPIO and I2C functions for the Raspberry Pi.
 -- description:         
 homepage:            n/a
--- license:             
+license:             BSD3
 license-file:        LICENSE
-author:              Wander Hillem
+author:              Wander Hillen	
 maintainer:          wjw.hillen@gmail.com
 -- copyright:           
 category:            System
