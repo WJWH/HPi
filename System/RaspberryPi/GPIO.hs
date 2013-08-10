@@ -1,12 +1,20 @@
 {-# LANGUAGE OverloadedStrings, ForeignFunctionInterface #-}
+
+-- |Library for controlling the GPIO pins on a Raspberry Pi (or any system using the Broadcom 2835 SOC). It is constructed 
+-- as a FFI wrapper over the BCM2835 library by Mike McCauley.
 module System.RaspberryPi.GPIO (
-    --general
+    -- *Data types
+    Pin,
+    PinMode,
+    LogicLevel,
+    Address,
+    -- *General functions
     withGPIO,
-    --GPIO functions
+    -- *GPIO specific functions
     setPinFunction,
     readPin,
     writePin,
-    --I2C functions
+    -- *I2C specific functions
     withI2C,
 	setI2cAddress,
     setI2cClockDivider,
@@ -16,7 +24,8 @@ module System.RaspberryPi.GPIO (
     writeReadI2C
     ) where
     
---FFI wrapper over the I2C portions of the BCM2835 library by ..., also some utility functions to make reading and writing simpler
+-- FFI wrapper over the I2C portions of the BCM2835 library by Mike McCauley, also some utility functions to 
+-- make reading and writing simpler
 
 --hook for the 
 
@@ -29,17 +38,20 @@ import qualified Data.ByteString.Char8 as BS
 
 ------------------------------------------------------------------------------------------------------------------------------------
 --------------------------------------------- Data types ---------------------------------------------------------------------------
-data LogicLevel = Low | High deriving (Eq,Enum,Show)
-
+-- |A GPIO pin can be either set to input or output mode. Setting it to input and writing to it will ...???
 data PinMode = Input | Output deriving (Eq,Enum,Show)
 
 data Pin =  PinV1_03|PinV1_05|PinV1_07|PinV1_08|PinV1_10|PinV1_11|PinV1_12|PinV1_13|PinV1_15|PinV1_16|PinV1_18|PinV1_19|PinV1_21|
-            PinV1_22|PinV1_23|PinV1_24|PinV1_26| --v1 pins
-            Pin03|Pin05|Pin07|Pin08|Pin10|Pin11|Pin12|Pin13|Pin15|Pin16|Pin18|Pin19|Pin21|Pin22|Pin23|Pin24|Pin26| --v2 pins
-            PinP5_03|PinP5_04|PinP5_05|PinP5_06 --v2 pins, P5 connector
+            PinV1_22|PinV1_23|PinV1_24|PinV1_26| -- ^v1 pins
+            Pin03|Pin05|Pin07|Pin08|Pin10|Pin11|Pin12|Pin13|Pin15|Pin16|Pin18|Pin19|Pin21|Pin22|Pin23|Pin24|Pin26| -- ^v2 pins
+            PinP5_03|PinP5_04|PinP5_05|PinP5_06 -- ^v2 pins, P5 connector
             deriving (Eq,Show)
 
+-- |This describes the address of an I2C slave.
 type Address = Word8 --adress of an I2C slave
+
+-- |Either high or low.
+type LogicLevel = Bool
 
 ------------------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------ Foreign imports -------------------------------------------------------------------------
