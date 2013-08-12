@@ -5,7 +5,7 @@
 module System.RaspberryPi.GPIO (
     -- *Data types
     Pin(..),
-    PinMode(..),
+    PinMode(Input,Output),
     LogicLevel,
     Address,
     -- *General functions
