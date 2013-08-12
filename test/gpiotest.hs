@@ -1,5 +1,6 @@
 import System.RaspberryPi.GPIO
 import Control.Concurrent
+import Control.Monad
 
 main = withGPIO $ do
     setPinFunction Pin11 Output
