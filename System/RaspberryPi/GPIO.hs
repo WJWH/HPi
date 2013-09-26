@@ -1,11 +1,11 @@
 {-# LANGUAGE OverloadedStrings, ForeignFunctionInterface #-}
 
--- |Library for controlling the GPIO pins on a Raspberry Pi (or any system using the Broadcom 2835 SOC). It is constructed 
+-- |Library for controlling the GPIO pins on a Raspberry Pi (or any system using the Broadcom 2835 SOC). It is constructed
 -- as a FFI wrapper over the BCM2835 library by Mike McCauley.
 module System.RaspberryPi.GPIO (
     -- *Data types
     Pin(..),
-    PinMode(Input,Output),
+    PinMode(..),
     LogicLevel,
     Address,
     -- *General functions
@@ -16,25 +16,25 @@ module System.RaspberryPi.GPIO (
     writePin,
     -- *I2C specific functions
     withI2C,
-	setI2cAddress,
     setI2cClockDivider,
     setI2cBaudRate,
     writeI2C,
     readI2C,
     writeReadI2C
     ) where
-    
--- FFI wrapper over the I2C portions of the BCM2835 library by Mike McCauley, also some utility functions to 
+
+-- FFI wrapper over the I2C portions of the BCM2835 library by Mike McCauley, also some utility functions to
 -- make reading and writing simpler
 
---hook for the 
+--hook for the
 
 import Control.Applicative ((<$>))
 import Control.Exception (bracket, bracket_)
 import Foreign
 import Foreign.C
 import Foreign.C.String
-import qualified Data.ByteString.Char8 as BS
+import qualified Data.ByteString as BS
+import qualified Data.ByteString.Char8 as BSC
 
 ------------------------------------------------------------------------------------------------------------------------------------
 --------------------------------------------- Data types ---------------------------------------------------------------------------
@@ -48,7 +48,7 @@ data Pin =  -- |Pins for the P1 connector of the V2 revision of the Raspberry Pi
             PinV1_22|PinV1_23|PinV1_24|PinV1_26
             deriving (Eq,Show)
 
--- |A GPIO pin can be either set to input or output mode. Setting it to input and writing to it will ...???
+-- |A GPIO pin can be either set to input or output mode.
 data PinMode = Input | Output deriving (Eq,Enum,Show)
 
 -- |This describes the address of an I2C slave.
@@ -100,23 +100,26 @@ foreign import ccall unsafe "bcm2835.h bcm2835_i2c_read_register_rs" c_writeRead
 ------------------------------------------ Exportable functions --------------------------------------------------------------------
 
 ------------------------------------------- Utility functions ----------------------------------------------------------------------
--- |Any IO computation that accesses the GPIO pins using this library should be wrapped with this function; ie withGPIO $ do blabla.
+-- |Any IO computation that accesses the GPIO pins using this library should be wrapped with this function; ie @withGPIO $ do foo@.
 -- It prepares the file descriptors to /dev/mem and makes sure everything is safely deallocated if an exception occurs. The behavior
 -- when accessing the GPIO outside of this function is undefined.
-withGPIO :: IO a -> IO a 
+withGPIO :: IO a -> IO a
 withGPIO f = bracket    initBCM2835
                         (const stopBCM2835) --const because you don't care about the output of initBCM2835
                         (\a -> if a==0 then error "Initialisation of GPIO failed" else f) -- init returning 0 is not good
 
---makes sure to return the I2C pins to their normal behaviour (note: this returns them to INPUT mode, not what they were before init)
-withI2C :: IO a -> IO a 
+-- |Any IO computation that uses the I2C bus using this library should be wrapped with this function; ie @withI2C $ do foo@.
+-- It prepares the relevant pins for use with the I2C protocol and makes sure everything is safely returned to normal if an exception
+-- occurs. WARNING: after this function returns, the I2C pins will be set to Input, so use 'setPinFunction' if you want to use them 
+-- for output.
+withI2C :: IO a -> IO a
 withI2C f = bracket_    initI2C
                         stopI2C
                         f
 
--- Mapping raspberry pi pin number to internal bmc2xxx pin number, ugly solution, but meh. Also, the existence of mutiple versions 
+-- Mapping raspberry pi pin number to internal bmc2835 pin number, ugly solution, but meh. Also, the existence of mutiple versions
 -- of the pin layout makes this the most elegant solution without resorting to state monads (which I don't want to do because that
--- would hamper the simplicity of having writePin and readPin be simple IO actions). As this function isn't exported anyway, the 
+-- would hamper the simplicity of having writePin and readPin be simple IO actions). As this function isn't exported anyway, the
 -- user should never be troubled by all this.
 getHwPin :: Pin -> CUChar
 --P1 connector on V1 boards
@@ -148,7 +151,7 @@ getHwPin Pin12 = 18
 getHwPin Pin13 = 27
 getHwPin Pin15 = 22
 getHwPin Pin16 = 23
-getHwPin Pin18 = 24 
+getHwPin Pin18 = 24
 getHwPin Pin19 = 10
 getHwPin Pin21 = 9
 getHwPin Pin22 = 25
@@ -162,28 +165,33 @@ getHwPin PinP5_05 = 30
 getHwPin PinP5_06 = 31
 
 ------------------------------------------- GPIO functions -------------------------------------------------------------------------
--- |Sets the pin to either Input or Output mode.
+-- |Sets the pin to either 'Input' or 'Output' mode.
 setPinFunction :: Pin -> PinMode -> IO ()
 setPinFunction pin mode = c_setPinFunction (getHwPin pin) (fromIntegral $ fromEnum mode)
 
---wat gebeurt er als het geen output pin is?
-writePin :: Pin -> LogicLevel -> IO ()
+-- |Sets the specified pin to either 'True' or 'False'.
+writePin :: Pin -> LogicLevel -> IO () --wat gebeurt er als het geen output pin is?
 writePin pin level = c_writePin (getHwPin pin) (fromIntegral $ fromEnum level)
 
+-- |Returns the current state of the specified pin.
 readPin :: Pin -> IO LogicLevel
 readPin pin = (toEnum . fromIntegral) <$> c_readPin (getHwPin pin)
 
 -------------------------------------------- I2C functions -------------------------------------------------------------------------
+--not exported, only used internally
 setI2cAddress :: Address -> IO ()
 setI2cAddress a = c_setSlaveAddressI2C $ fromIntegral a
 
+-- |Sets the clock divider for (and hence the speed of) the I2C bus.
 setI2cClockDivider :: Word16 -> IO ()
 setI2cClockDivider a = c_setClockDividerI2C $ fromIntegral a
 
+-- |Sets the baud rate of the I2C bus.
 setI2cBaudRate :: Word32 -> IO ()
 setI2cBaudRate a = c_setBaudRateI2C $ fromIntegral a
 
-writeI2C :: Address -> BS.ByteString -> IO (Either BS.ByteString ())	--writes a bytestring to the specified address
+-- |Writes the data in the 'ByteString' to the specified adress.
+writeI2C :: Address -> BS.ByteString -> IO (Either BSC.ByteString ())	--writes a bytestring to the specified address
 writeI2C address by = BS.useAsCString by $ \bs -> do
     setI2cAddress address
     readresult <- c_writeI2C bs (fromIntegral $ BS.length by)
@@ -193,7 +201,8 @@ writeI2C address by = BS.useAsCString by $ \bs -> do
         0x04 -> return (Left "Not all data was read.")
         0x00 -> return (Right ())
 
-readI2C :: Address -> Int -> IO (Either BS.ByteString BS.ByteString) --reads num bytes from the specified address
+-- |Reads num bytes from the specified address.
+readI2C :: Address -> Int -> IO (Either BSC.ByteString BS.ByteString) --reads num bytes from the specified address
 readI2C address num = allocaBytes (num+1) $ \buf -> do --is the +1 necessary??
     setI2cAddress address
     readresult <- c_readI2c buf (fromIntegral num)
@@ -204,8 +213,9 @@ readI2C address num = allocaBytes (num+1) $ \buf -> do --is the +1 necessary??
         0x00 -> do  bs <- BS.packCString buf --convert C buffer to a bytestring
                     return (Right bs)
 
---writes a bytestring containing a register address to the specified  (i2c) address, then reads num bytes from it, using the repeated start i2c method
-writeReadI2C :: Address -> BS.ByteString -> Int -> IO (Either BS.ByteString BS.ByteString) 
+-- |Writes a 'ByteString' containing a register address to the specified address, then reads num bytes from
+-- it, using the \"repeated start\" I2C method
+writeReadI2C :: Address -> BS.ByteString -> Int -> IO (Either BSC.ByteString BS.ByteString)
 writeReadI2C address by num = BS.useAsCString by $ \bs -> do --marshall the register-containing bytestring
     allocaBytes (num+1) $ \buf -> do	--allocate a buffer for the response
         setI2cAddress address
