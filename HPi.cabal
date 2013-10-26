@@ -5,7 +5,7 @@ name:                HPi
 version:             0.1.0.0
 synopsis:            GPIO and I2C functions for the Raspberry Pi.
 description:         This package is a FFI wrapper around the bcm2835 library by Mike McCauley, it also includes a few utility functions for easier use of the imported functions.
-homepage:            https://github.com/WJWH/HPi/tree/master
+homepage:            https://github.com/WJWH/HPi
 license:             BSD3
 license-file:        LICENSE
 author:              Wander Hillen	
