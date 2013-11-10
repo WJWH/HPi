@@ -35,6 +35,7 @@ import Foreign.C
 import Foreign.C.String
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as BSC
+import GHC.IO.Exception
 
 ------------------------------------------------------------------------------------------------------------------------------------
 --------------------------------------------- Data types ---------------------------------------------------------------------------
