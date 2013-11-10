@@ -29,7 +29,7 @@ module System.RaspberryPi.GPIO (
 --hook for the
 
 import Control.Applicative ((<$>))
-import Control.Exception (bracket, bracket_)
+import Control.Exception
 import Foreign
 import Foreign.C
 import Foreign.C.String
@@ -106,7 +106,8 @@ foreign import ccall unsafe "bcm2835.h bcm2835_i2c_read_register_rs" c_writeRead
 withGPIO :: IO a -> IO a
 withGPIO f = bracket    initBCM2835
                         (const stopBCM2835) --const because you don't care about the output of initBCM2835
-                        (\a -> if a==0 then error "Initialisation of GPIO failed" else f) -- init returning 0 is not good
+                        (\a -> if a==0 then throwIO ioe else f) -- init returning 0 is not good
+                            where ioe = IOError Nothing IllegalOperation "GPIO: " "Unable to start GPIO." Nothing Nothing
 
 -- |Any IO computation that uses the I2C bus using this library should be wrapped with this function; ie @withI2C $ do foo@.
 -- It prepares the relevant pins for use with the I2C protocol and makes sure everything is safely returned to normal if an exception
