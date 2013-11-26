@@ -112,8 +112,8 @@ withGPIO f = bracket    initBCM2835
 
 -- |Any IO computation that uses the I2C bus using this library should be wrapped with this function; ie @withI2C $ do foo@.
 -- It prepares the relevant pins for use with the I2C protocol and makes sure everything is safely returned to normal if an exception
--- occurs. WARNING: after this function returns, the I2C pins will be set to Input, so use 'setPinFunction' if you want to use them 
--- for output.
+-- occurs. If you only use the GPIO pins for I2C, you can do @withGPIO . withI2C $ do foo@ and it will work as expected. WARNING: 
+-- after this function returns, the I2C pins will be set to Input, so use 'setPinFunction' if you want to use them for output.
 withI2C :: IO a -> IO a
 withI2C f = bracket_    initI2C
                         stopI2C
