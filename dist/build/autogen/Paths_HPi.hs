@@ -12,13 +12,13 @@ catchIO = Exception.catch
 
 
 version :: Version
-version = Version {versionBranch = [0,1,0,0], versionTags = []}
+version = Version {versionBranch = [0,2,0], versionTags = []}
 bindir, libdir, datadir, libexecdir :: FilePath
 
 bindir     = "C:\\Users\\Wander\\AppData\\Roaming\\cabal\\bin"
-libdir     = "C:\\Users\\Wander\\AppData\\Roaming\\cabal\\HPi-0.1.0.0\\ghc-7.4.2"
-datadir    = "C:\\Users\\Wander\\AppData\\Roaming\\cabal\\HPi-0.1.0.0"
-libexecdir = "C:\\Users\\Wander\\AppData\\Roaming\\cabal\\HPi-0.1.0.0"
+libdir     = "C:\\Users\\Wander\\AppData\\Roaming\\cabal\\HPi-0.2.0\\ghc-7.4.2"
+datadir    = "C:\\Users\\Wander\\AppData\\Roaming\\cabal\\HPi-0.2.0"
+libexecdir = "C:\\Users\\Wander\\AppData\\Roaming\\cabal\\HPi-0.2.0"
 
 getBinDir, getLibDir, getDataDir, getLibexecDir :: IO FilePath
 getBinDir = catchIO (getEnv "HPi_bindir") (\_ -> return bindir)
