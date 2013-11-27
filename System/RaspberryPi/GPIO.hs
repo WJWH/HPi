@@ -34,7 +34,7 @@ import Foreign
 import Foreign.C
 import Foreign.C.String
 import qualified Data.ByteString as BS
-import qualified Data.ByteString.Char8 as BSC
+-- import qualified Data.ByteString.Char8 as BSC
 import GHC.IO.Exception
 
 ------------------------------------------------------------------------------------------------------------------------------------
@@ -120,7 +120,7 @@ withI2C f = bracket_    initI2C
                         f
 
 --
-
+actOnResult :: CUChar -> CString -> IO BS.ByteString
 actOnResult rr buf = case rr of
     0x01 -> throwIO $ IOError Nothing IllegalOperation "I2C: " "Received an unexpected NACK." Nothing Nothing
     0x02 -> throwIO $ IOError Nothing IllegalOperation "I2C: " "Received Clock Stretch Timeout." Nothing Nothing 
@@ -209,11 +209,11 @@ writeI2C address by = BS.useAsCString by $ \bs -> do
     case readresult of
         0x01 -> throwIO $ IOError Nothing IllegalOperation "I2C: " "Received an unexpected NACK." Nothing Nothing
         0x02 -> throwIO $ IOError Nothing IllegalOperation "I2C: " "Received Clock Stretch Timeout." Nothing Nothing 
-        0x04 -> throwIO $ IOError Nothing IllegalOperation "I2C: " "Not all data was read." Nothing Nothing  return (Left "Not all data was read.")
+        0x04 -> throwIO $ IOError Nothing IllegalOperation "I2C: " "Not all data was read." Nothing Nothing
         0x00 -> return ()
 
 -- |Reads num bytes from the specified address. Throws an IOException if an error occurs.
-readI2C :: Address -> Int -> IO () --reads num bytes from the specified address
+readI2C :: Address -> Int -> IO BS.ByteString --reads num bytes from the specified address
 readI2C address num = allocaBytes (num+1) $ \buf -> do --is the +1 necessary??
     setI2cAddress address
     readresult <- c_readI2C buf (fromIntegral num)
@@ -221,7 +221,7 @@ readI2C address num = allocaBytes (num+1) $ \buf -> do --is the +1 necessary??
 
 -- |Writes a 'ByteString' containing a register address to the specified address, then reads num bytes from
 -- it, using the \"repeated start\" I2C method. Throws an IOException if an error occurs.
-writeReadI2C :: Address -> BS.ByteString -> Int -> IO ()
+writeReadI2C :: Address -> BS.ByteString -> Int -> IO BS.ByteString
 writeReadI2C address by num = BS.useAsCString by $ \bs -> do --marshall the register-containing bytestring
     allocaBytes (num+1) $ \buf -> do	--allocate a buffer for the response
         setI2cAddress address
