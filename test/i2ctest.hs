@@ -24,14 +24,18 @@ data LedState = Off | Green | Yellow | Red deriving (Show,Eq,Enum)
 type MatrixState = Array (Int,Int) LedState
 type Matrix = StateT MatrixState IO
 
-main = withGPIO . withI2C . (flip evalStateT (entireMatrix Off)) . forever $ do --function composition is pretty awesome.
-    clearMatrix --switches all pixels to Off
-    --fill up the entire array pixel by pixel, waiting a bit after each one
-    forM_ [(x,y)| x <- [0..7], y <- [0..7]] (\xy -> writePixel Green xy >> shortDelay)
-    --some wild multicolor stuff
-    replicateM 5 $ forM_ [Green, Yellow, Red, Yellow] (\ls -> put (entireMatrix ls) >> writeMatrix >> shortDelay)
-    -- a bit of dimming
-    replicateM 5 $ forM_ ([15,14..0]++[1..14]) (\b -> setBrightness b >> shortDelay)
+main = withGPIO . withI2C . (flip evalStateT (entireMatrix Off)) $ do --function composition is pretty awesome.
+    writeSingleByte 0x21 -- switches on the internal oscillator of the LED backpack
+    writeSingleByte 0x81 -- turns on display, sets blink rate to "not blinking"
+    writeSingleByte 0xEF -- sets brightness to maximum
+    forever $ do
+        clearMatrix --switches all pixels to Off
+        --fill up the entire array pixel by pixel, waiting a bit after each one
+        forM_ [(x,y)| x <- [0..7], y <- [0..7]] (\xy -> writePixel Green xy >> shortDelay)
+        --some wild multicolor stuff
+        replicateM 5 $ forM_ [Green, Yellow, Red, Yellow] (\ls -> put (entireMatrix ls) >> writeMatrix >> shortDelay)
+        -- a bit of dimming
+        replicateM 5 $ forM_ ([15,14..0]++[1..14]) (\b -> setBrightness b >> shortDelay)
 
 --a matrix where all LEDs have the same LedState
 entireMatrix :: LedState -> MatrixState
@@ -54,8 +58,11 @@ setBrightness :: Word8 -> Matrix ()
 setBrightness b
     | (b > 15)  = go 15
     | otherwise = go b
-    where go x = liftIO $ writeI2C adress $ BS.pack [(0xE0 .|. x)] --write to the bus, discard result, lift to Matrix
+    where go x = writeSingleByte (0xE0 .|. x) --0xEX is the magic word for brightness
 
+--write a single byte, useful for setting brightness, turning on oscillator, etc
+writeSingleByte :: Word8 -> Matrix ()
+writeSingleByte w = liftIO $ writeI2C adress (BS.singleton w)
 
 --Compared with the adafruit version, the writeMatrix function seems rather complicated. This is because the adafruit keeps a much
 --more lowlevel version of the state in memory.
