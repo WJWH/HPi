@@ -26,6 +26,7 @@ type Matrix = StateT MatrixState IO
 
 main = withGPIO . withI2C . (flip evalStateT (entireMatrix Off)) $ do --function composition is pretty awesome.
     liftIO $ print "Starting"
+    liftIO $ writeI2C adress $ BS.singleton (0x21)
     setBrightness 15
     put $ entireMatrix Green
     writeMatrix
