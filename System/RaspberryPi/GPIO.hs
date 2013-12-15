@@ -34,7 +34,8 @@ import Foreign
 import Foreign.C
 import Foreign.C.String
 import qualified Data.ByteString as BS
--- import qualified Data.ByteString.Char8 as BSC
+import Data.Maybe
+import Data.Tuple
 import GHC.IO.Exception
 
 ------------------------------------------------------------------------------------------------------------------------------------
@@ -49,8 +50,13 @@ data Pin =  -- |Pins for the P1 connector of the V2 revision of the Raspberry Pi
             PinV1_22|PinV1_23|PinV1_24|PinV1_26
             deriving (Eq,Show)
 
--- |A GPIO pin can be either set to input or output mode.
-data PinMode = Input | Output deriving (Eq,Enum,Show)
+-- |A GPIO pin can be either set to input mode, output mode or an alternative mode.
+data PinMode = Input | Output | Alt0 | Alt1 | Alt2 | Alt3 | Alt4 | Alt5 deriving (Eq,Show)
+
+instance Enum PinMode where -- bit strange, but just deriving Enum doesn't work because the numbers don't monotonically ascend
+    fromEnum = fromJust . flip lookup table
+    toEnum = fromJust . flip lookup (map swap table)
+table = [(Input, 0), (Output, 1), (Alt0, 4), (Alt1, 5), (Alt2, 6), (Alt3, 7), (Alt4, 3), (Alt5, 2)]
 
 -- |This describes the address of an I2C slave.
 type Address = Word8 --adress of an I2C slave
