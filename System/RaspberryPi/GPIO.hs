@@ -26,8 +26,6 @@ module System.RaspberryPi.GPIO (
 -- FFI wrapper over the I2C portions of the BCM2835 library by Mike McCauley, also some utility functions to
 -- make reading and writing simpler
 
---hook for the
-
 import Control.Applicative ((<$>))
 import Control.Exception
 import Foreign
