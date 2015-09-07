@@ -20,7 +20,9 @@ module System.RaspberryPi.GPIO (
     setI2cBaudRate,
     writeI2C,
     readI2C,
-    writeReadI2C
+    writeReadI2C,
+    -- *SPI specific functions
+    withSPI,
     ) where
 
 -- FFI wrapper over the I2C portions of the BCM2835 library by Mike McCauley, also some utility functions to
@@ -61,6 +63,11 @@ type Address = Word8 --adress of an I2C slave
 
 -- |Either high or low.
 type LogicLevel = Bool
+
+-- |This describes which Chip Select pins are asserted (used in SPI communications).
+data SPIMode = CS1 | CS2 | CSBOTH | CSNONE deriving (Eq, Show, Enum)
+
+
 
 ------------------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------ Foreign imports -------------------------------------------------------------------------
@@ -135,7 +142,16 @@ withI2C f = bracket_    initI2C
                         stopI2C
                         f
 
---
+-- |Any IO computation that uses the SPI functionality using this library should be wrapped with this function; ie @withSPI $ do foo@.
+-- It prepares the relevant pins for use with the SPI protocol and makes sure everything is safely returned to normal if an exception
+-- occurs. If you only use the GPIO pins for SPI, you can do @withGPIO . withSPI $ do foo@ and it will work as expected. WARNING: 
+-- after this function returns, the SPI pins will be set to Input, so use 'setPinFunction' if you want to use them for output.
+withSPI :: IO a -> IO a
+withSPI f = bracket_    initSPI
+                        stopSPI
+                        f
+                        
+-- Possible error results for I2C functions.
 actOnResult :: CUChar -> CString -> IO BS.ByteString
 actOnResult rr buf = case rr of
     0x01 -> throwIO $ IOError Nothing IllegalOperation "I2C: " "Received an unexpected NACK." Nothing Nothing
@@ -243,3 +259,21 @@ writeReadI2C address by num = BS.useAsCString by $ \bs -> do --marshall the regi
         setI2cAddress address
         readresult <- c_writeReadI2C bs buf (fromIntegral num)
         actOnResult readresult buf
+
+-------------------------------------------- SPI functions -------------------------------------------------------------------------
+-- |Sets the chip select pin(s). When a transfer is made with 'transferSPI' or 'transferManySPI', the selected pin(s) will be 
+-- asserted during the transfer. 
+chipSelectSPI :: SPIMode -> IO ()
+chipSelectSPI spim = c_chipSelectSPI (fromIntegral . fromEnum $ spim)
+
+-- |Transfers one byte to and from the currently selected SPI slave. Asserts the currently selected CS pins (as previously set by 
+-- chipSelectSPI) during the transfer. Clocks the 8 bit value out on MOSI, and simultaneously clocks in data from MISO. Returns the 
+-- read data byte from the slave.
+transferSPI :: Word8 -> IO Word8
+transferSPI input = fromIntegral <$> c_transferSPI (fromIntegral input)
+
+-- |Transfers any number of bytes to and from the currently selected SPI slave, one byte at a time. Asserts the currently selected 
+-- CS pins (as previously set by chipSelectSPI) during the transfer. Clocks 8 bit bytes out on MOSI, and simultaneously clocks in 
+-- data from MISO.
+transferManySPI :: [Word8] -> IO [Word8]
+transferManySPI inputs = mapM transferSPI inputs
