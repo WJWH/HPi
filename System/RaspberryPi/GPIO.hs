@@ -101,6 +101,18 @@ foreign import ccall unsafe "bcm2835.h bcm2835_i2c_read" c_readI2C :: CString ->
 --reads a certain register with the repeated start method
 foreign import ccall unsafe "bcm2835.h bcm2835_i2c_read_register_rs" c_writeReadI2C :: CString -> CString -> CUShort -> IO CUChar
 
+------------------------------------------- SPI functions --------------------------------------------------------------------------
+--inits the SPI pins
+foreign import ccall unsafe "bcm2835.h bcm2835_spi_begin" initSPI   :: IO ()
+--resets the SPI pins
+foreign import ccall unsafe "bcm2835.h bcm2835_spi_end"   stopSPI   :: IO ()
+
+--Transfers one byte to and from the currently selected SPI slave
+foreign import ccall unsafe "bcm2835_spi_transfer"        c_transferSPI :: CUChar -> IO CUChar
+--Changes the chip select pins
+foreign import ccall unsafe "bcm2835_spi_chipSelect"      c_chipSelectSPI :: CUChar -> IO ()
+
+
 ------------------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------ Exportable functions --------------------------------------------------------------------
 
