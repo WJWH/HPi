@@ -65,9 +65,13 @@ type Address = Word8 --adress of an I2C slave
 type LogicLevel = Bool
 
 -- |This describes which Chip Select pins are asserted (used in SPI communications).
-data SPIMode = CS1 | CS2 | CSBOTH | CSNONE deriving (Eq, Show, Enum)
+data SPIPin = CS1 | CS2 | CSBOTH | CSNONE deriving (Eq, Show, Enum)
 
+-- |Clock polarity (CPOL) for SPI transmissions.
+type CPOL = Bool
 
+-- |Clock phase (CPHA) for SPI transmissions.
+type CPHA = Bool
 
 ------------------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------ Foreign imports -------------------------------------------------------------------------
@@ -118,6 +122,11 @@ foreign import ccall unsafe "bcm2835.h bcm2835_spi_end"   stopSPI   :: IO ()
 foreign import ccall unsafe "bcm2835_spi_transfer"        c_transferSPI :: CUChar -> IO CUChar
 --Changes the chip select pins
 foreign import ccall unsafe "bcm2835_spi_chipSelect"      c_chipSelectSPI :: CUChar -> IO ()
+
+--Sets whether SPI Chip Select pulls pins high or low.
+foreign import ccall unsafe "bcm2835_spi_setChipSelectPolarity" c_setChipSelectPolarity :: CUChar -> CUChar -> IO ()
+--Sets the data mode used (phase/polarity)
+foreign import ccall unsafe "bcm2835_spi_setDataMode"     c_setDataModeSPI :: CUChar -> IO ()
 
 
 ------------------------------------------------------------------------------------------------------------------------------------
@@ -263,8 +272,21 @@ writeReadI2C address by num = BS.useAsCString by $ \bs -> do --marshall the regi
 -------------------------------------------- SPI functions -------------------------------------------------------------------------
 -- |Sets the chip select pin(s). When a transfer is made with 'transferSPI' or 'transferManySPI', the selected pin(s) will be 
 -- asserted during the transfer. 
-chipSelectSPI :: SPIMode -> IO ()
-chipSelectSPI spim = c_chipSelectSPI (fromIntegral . fromEnum $ spim)
+chipSelectSPI :: SPIPin -> IO ()
+chipSelectSPI pin = c_chipSelectSPI (fromIntegral . fromEnum $ pin)
+
+-- |Sets the chip select pin polarity for a given pin(s). When a transfer is made with 'transferSPI' or 'transferManySPI', the 
+-- currently selected chip select pin(s) will be asserted to the LogicLevel supplied. When transfers are not happening, the chip 
+-- select pin(s) return to the complement (inactive) value. 
+setChipSelectPolaritySPI :: SPIPin -> LogicLevel -> IO ()
+setChipSelectPolaritySPI pin level = c_setChipSelectPolarity (fromIntegral . fromEnum $ pin) (fromIntegral . fromEnum $ level)
+
+-- |Sets the SPI clock polarity and phase (ie, CPOL and CPHA)
+setDataModeSPI :: (CPOL,CPHA) -> IO ()
+setDataModeSPI (False,False) = c_setDataModeSPI 0
+setDataModeSPI (False,True)  = c_setDataModeSPI 1
+setDataModeSPI (True,False)  = c_setDataModeSPI 2
+setDataModeSPI (True,True)   = c_setDataModeSPI 3
 
 -- |Transfers one byte to and from the currently selected SPI slave. Asserts the currently selected CS pins (as previously set by 
 -- chipSelectSPI) during the transfer. Clocks the 8 bit value out on MOSI, and simultaneously clocks in data from MISO. Returns the 
