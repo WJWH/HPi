@@ -8,6 +8,9 @@ module System.RaspberryPi.GPIO (
     PinMode(..),
     LogicLevel,
     Address,
+    SPIPin(..),
+    CPOL,
+    CPHA,
     -- *General functions
     withGPIO,
     -- *GPIO specific functions
@@ -23,6 +26,11 @@ module System.RaspberryPi.GPIO (
     writeReadI2C,
     -- *SPI specific functions
     withSPI,
+    chipSelectSPI,
+    setChipSelectPolaritySPI,
+    setDataModeSPI,
+    transferSPI,
+    transferManySPI
     ) where
 
 -- FFI wrapper over the I2C portions of the BCM2835 library by Mike McCauley, also some utility functions to
@@ -40,7 +48,8 @@ import GHC.IO.Exception
 
 ------------------------------------------------------------------------------------------------------------------------------------
 --------------------------------------------- Data types ---------------------------------------------------------------------------
-
+-- |This describes the pins on the Raspberry Pi boards. Since the BCM2835 SOC internally uses different numbers (and these numbers 
+-- differ between versions, the library internally translates this pin number to the correct number.
 data Pin =  -- |Pins for the P1 connector of the V2 revision of the Raspberry Pi
             Pin03|Pin05|Pin07|Pin08|Pin10|Pin11|Pin12|Pin13|Pin15|Pin16|Pin18|Pin19|Pin21|Pin22|Pin23|Pin24|Pin26|
             -- |Pins for the P5 connector of the V2 revision of the Raspberry Pi
@@ -289,13 +298,13 @@ setDataModeSPI (True,False)  = c_setDataModeSPI 2
 setDataModeSPI (True,True)   = c_setDataModeSPI 3
 
 -- |Transfers one byte to and from the currently selected SPI slave. Asserts the currently selected CS pins (as previously set by 
--- chipSelectSPI) during the transfer. Clocks the 8 bit value out on MOSI, and simultaneously clocks in data from MISO. Returns the 
+-- 'chipSelectSPI') during the transfer. Clocks the 8 bit value out on MOSI, and simultaneously clocks in data from MISO. Returns the 
 -- read data byte from the slave.
 transferSPI :: Word8 -> IO Word8
 transferSPI input = fromIntegral <$> c_transferSPI (fromIntegral input)
 
 -- |Transfers any number of bytes to and from the currently selected SPI slave, one byte at a time. Asserts the currently selected 
--- CS pins (as previously set by chipSelectSPI) during the transfer. Clocks 8 bit bytes out on MOSI, and simultaneously clocks in 
+-- CS pins (as previously set by 'chipSelectSPI') during the transfer. Clocks 8 bit bytes out on MOSI, and simultaneously clocks in 
 -- data from MISO.
 transferManySPI :: [Word8] -> IO [Word8]
 transferManySPI inputs = mapM transferSPI inputs
