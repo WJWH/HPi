@@ -1,11 +1,11 @@
 HPi
 ===
 
-Library to access the GPIO pins on a Raspberry Pi from Haskell.
+Library to access the GPIO pins on a Raspberry Pi from Haskell. Works with all Raspberry Pi versions (ie 1, 1v2 and 2).
 
 ===
 
-HPi is a small library to access the GPIO pins on a Raspberry Pi from Haskell. It also includes some functions to use the I2C pins, see the haddock documentation for details. It is constructed as a FFI wrapper around the bcm2835 library, which is written in C. Because this library accesses the GPIO pins directly via a memory map, it should be faster than libraries which access the GPIO pins via the /sys/class/gpio interface.
+HPi is a small library to access the GPIO pins on a Raspberry Pi from Haskell. It also includes some functions to use the I2C and SPI functionality of the Raspberry Pi, see the haddock documentation for details. It is constructed as a FFI wrapper around the bcm2835 library, which is written in C. Because this library accesses the GPIO pins directly via a memory map, it should be faster than libraries which access the GPIO pins via the /sys/class/gpio interface.
 
 ===
 
