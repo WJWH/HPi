@@ -129,6 +129,8 @@ foreign import ccall unsafe "bcm2835.h bcm2835_spi_end"   stopSPI   :: IO ()
 
 --Transfers one byte to and from the currently selected SPI slave
 foreign import ccall unsafe "bcm2835_spi_transfer"        c_transferSPI :: CUChar -> IO CUChar
+--Transfers multiple bytes to and from the currently selected SPI slave
+foreign import ccall unsafe "bcm2835_spi_transfern"      c_transferManySPI :: CString -> CUInt -> IO ()
 --Changes the chip select pins
 foreign import ccall unsafe "bcm2835_spi_chipSelect"      c_chipSelectSPI :: CUChar -> IO ()
 
@@ -307,4 +309,8 @@ transferSPI input = fromIntegral <$> c_transferSPI (fromIntegral input)
 -- CS pins (as previously set by 'chipSelectSPI') during the transfer. Clocks 8 bit bytes out on MOSI, and simultaneously clocks in 
 -- data from MISO.
 transferManySPI :: [Word8] -> IO [Word8]
-transferManySPI inputs = mapM transferSPI inputs
+transferManySPI input = BS.useAsCString (BS.pack input) $ \buf -> do --convert input list to bytestring and from there to CString
+    --returns the read bytes in buf. note that buf is actually ((length input)+1) bytes long, the final byte is a null terminator. 
+    --the null terminator is needed by BS.packCString later on, and is usefully supplied for free by BS.useAsCString.
+    c_transferManySPI buf (fromIntegral . length $ input) --
+    (BS.packCString buf) >>= return . BS.unpack -- translate back from a buffer to a bytestring to a [Word8]
