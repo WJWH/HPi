@@ -23,7 +23,7 @@ module System.RaspberryPi.GPIO (
     setI2cBaudRate,
     writeI2C,
     readI2C,
-    writeReadI2C,
+    writeReadRSI2C,
     -- *SPI specific functions
     withSPI,
     chipSelectSPI,
@@ -119,7 +119,7 @@ foreign import ccall unsafe "bcm2835.h bcm2835_i2c_write" c_writeI2C :: CString 
 --read some bytes from the bus
 foreign import ccall unsafe "bcm2835.h bcm2835_i2c_read" c_readI2C :: CString -> CUShort -> IO CUChar
 --reads a certain register with the repeated start method
-foreign import ccall unsafe "bcm2835.h bcm2835_i2c_read_register_rs" c_writeReadI2C :: CString -> CString -> CUShort -> IO CUChar
+foreign import ccall unsafe "bcm2835_i2c_write_read_rs" c_writeReadRSI2C :: CString -> CUInt -> CString -> CUInt -> IO CUChar
 
 ------------------------------------------- SPI functions --------------------------------------------------------------------------
 --inits the SPI pins
@@ -253,7 +253,7 @@ setI2cClockDivider a = c_setClockDividerI2C $ fromIntegral a
 setI2cBaudRate :: Word32 -> IO ()
 setI2cBaudRate a = c_setBaudRateI2C $ fromIntegral a
 
--- |Writes the data in the 'ByteString' to the specified adress. Throws an IOException if an error occurs.
+-- |Writes the data in the 'ByteString' to the specified I2C 'Address'. Throws an IOException if an error occurs.
 writeI2C :: Address -> BS.ByteString -> IO ()	--writes a bytestring to the specified address
 writeI2C address by = BS.useAsCString by $ \bs -> do
     setI2cAddress address
@@ -264,22 +264,22 @@ writeI2C address by = BS.useAsCString by $ \bs -> do
         0x04 -> throwIO $ IOError Nothing IllegalOperation "I2C: " "Not all data was read." Nothing Nothing
         0x00 -> return ()
 
--- |Reads num bytes from the specified address. Throws an IOException if an error occurs.
+-- |Reads num bytes from the specified 'Address'. Throws an IOException if an error occurs.
 readI2C :: Address -> Int -> IO BS.ByteString --reads num bytes from the specified address
 readI2C address num = allocaBytes (num+1) $ \buf -> do --is the +1 necessary??
     setI2cAddress address
     readresult <- c_readI2C buf (fromIntegral num)
     actOnResult readresult buf
 
--- |Writes a 'ByteString' containing a register address to the specified address, then reads num bytes from
--- it, using the \"repeated start\" I2C method. Throws an IOException if an error occurs.
-writeReadI2C :: Address -> BS.ByteString -> Int -> IO BS.ByteString
-writeReadI2C address by num = BS.useAsCString by $ \bs -> do --marshall the register-containing bytestring
+-- |Writes the data in the 'ByteString' to the specified 'Address', then issues a "repeated start" (with no prior stop) and then 
+-- reads num bytes from the same 'Address'. Necessary for devices that require such behavior, such as the MLX90620.
+writeReadRSI2C :: Address -> BS.ByteString -> Int -> IO BS.ByteString
+writeReadRSI2C address by num = BS.useAsCString by $ \bs -> do --marshall the register-containing bytestring
     allocaBytes (num+1) $ \buf -> do	--allocate a buffer for the response
         setI2cAddress address
-        readresult <- c_writeReadI2C bs buf (fromIntegral num)
+        readresult <- c_writeReadRSI2C bs (fromIntegral $ BS.length by) buf (fromIntegral num)
         actOnResult readresult buf
-
+        
 -------------------------------------------- SPI functions -------------------------------------------------------------------------
 -- |Sets the chip select pin(s). When a transfer is made with 'transferSPI' or 'transferManySPI', the selected pin(s) will be 
 -- asserted during the transfer. 
