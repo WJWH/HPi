@@ -4,8 +4,8 @@ import Control.Monad
 
 --When compiling this, make sure to include the path to the bcm2835 library to the compilerto prevent 
 --"reference not found" errors, ie:
---ghc --make gpiotest.hs ~/bcm2835-1.25/src/bcm2835.o 
---Obviouly, this assumes you installed the bcm2835 library in "~/bcm2835-1.25". Due to the library accessing
+--ghc --make gpiotest.hs ~/bcm2835-1.45/src/bcm2835.o 
+--Obviouly, this assumes you installed the bcm2835 library in "~/bcm2835-1.45". Due to the library accessing
 -- /dev/mem, the compiled program should be run with sudo.
 
 --This program switches pin 11 on and off, with roughly a second between state transitions. Attach a LED in series
