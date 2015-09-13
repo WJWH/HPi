@@ -119,7 +119,7 @@ foreign import ccall unsafe "bcm2835.h bcm2835_i2c_write" c_writeI2C :: CString 
 --read some bytes from the bus
 foreign import ccall unsafe "bcm2835.h bcm2835_i2c_read" c_readI2C :: CString -> CUShort -> IO CUChar
 --reads a certain register with the repeated start method
-foreign import ccall unsafe "bcm2835_i2c_write_read_rs" c_writeReadRSI2C :: CString -> CUInt -> CString -> CUInt -> IO CUChar
+foreign import ccall unsafe "bcm2835.h bcm2835_i2c_write_read_rs" c_writeReadRSI2C :: CString -> CUInt -> CString -> CUInt -> IO CUChar
 
 ------------------------------------------- SPI functions --------------------------------------------------------------------------
 --inits the SPI pins
@@ -128,16 +128,16 @@ foreign import ccall unsafe "bcm2835.h bcm2835_spi_begin" initSPI   :: IO ()
 foreign import ccall unsafe "bcm2835.h bcm2835_spi_end"   stopSPI   :: IO ()
 
 --Transfers one byte to and from the currently selected SPI slave
-foreign import ccall unsafe "bcm2835_spi_transfer"        c_transferSPI :: CUChar -> IO CUChar
+foreign import ccall unsafe "bcm2835.h bcm2835_spi_transfer"        c_transferSPI :: CUChar -> IO CUChar
 --Transfers multiple bytes to and from the currently selected SPI slave
-foreign import ccall unsafe "bcm2835_spi_transfern"      c_transferManySPI :: CString -> CUInt -> IO ()
+foreign import ccall unsafe "bcm2835.h bcm2835_spi_transfern"      c_transferManySPI :: CString -> CUInt -> IO ()
 --Changes the chip select pins
-foreign import ccall unsafe "bcm2835_spi_chipSelect"      c_chipSelectSPI :: CUChar -> IO ()
+foreign import ccall unsafe "bcm2835.h bcm2835_spi_chipSelect"      c_chipSelectSPI :: CUChar -> IO ()
 
 --Sets whether SPI Chip Select pulls pins high or low.
-foreign import ccall unsafe "bcm2835_spi_setChipSelectPolarity" c_setChipSelectPolarity :: CUChar -> CUChar -> IO ()
+foreign import ccall unsafe "bcm2835.h bcm2835_spi_setChipSelectPolarity" c_setChipSelectPolarity :: CUChar -> CUChar -> IO ()
 --Sets the data mode used (phase/polarity)
-foreign import ccall unsafe "bcm2835_spi_setDataMode"     c_setDataModeSPI :: CUChar -> IO ()
+foreign import ccall unsafe "bcm2835.h bcm2835_spi_setDataMode"     c_setDataModeSPI :: CUChar -> IO ()
 
 
 ------------------------------------------------------------------------------------------------------------------------------------
