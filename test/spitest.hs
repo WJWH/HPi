@@ -18,10 +18,13 @@ main = withGPIO . withSPI $ do
     chipSelectSPI CS1   --set the Chip select pin to the CS1 pin
     setChipSelectPolaritySPI CS1 False --The FRAM chip needs CS to be puled low for transactions
     setDataModeSPI (False,False) --The FRAM chip can handle either datamode 0,0 or 1,1
+    mapM_ writeReadAndPrint [1..10]
+    
+writeReadAndPrint :: Word8 IO ()
+writeReadAndPrint x = do
     --for a deeper explanation of the values used below, see the datasheet of the FRAM chip
-    --the "2" means write, the two zeroes mean memory adress zero and the 12 is the value actually written
-    transferManySPI [2,0,0,12] 
+    --the "2" means write, the two zeroes mean memory adress zero and the final value is the value actually written
+    transferManySPI [2,0,0,x] 
     --the "3" means read, the next two zeroes mean memory adress zero and the last one is ignored by the chip but is necessary 
     --to keep the transaction open for the read
-    results <- transferManySPI [3,0,0,0]
-    print . last $ results -- should print "12"
+    transferManySPI [3,0,0,0] >>= (print . last)  -- should print x
