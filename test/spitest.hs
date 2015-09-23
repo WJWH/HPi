@@ -20,7 +20,7 @@ main = withGPIO . withSPI $ do
     setDataModeSPI (False,False) --The FRAM chip can handle either datamode 0,0 or 1,1
     mapM_ writeReadAndPrint [1..10]
     
-writeReadAndPrint :: Word8 IO ()
+writeReadAndPrint :: Word8 -> IO ()
 writeReadAndPrint x = do
     --for a deeper explanation of the values used below, see the datasheet of the FRAM chip
     --the "2" means write, the two zeroes mean memory adress zero and the final value is the value actually written
