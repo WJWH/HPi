@@ -172,12 +172,12 @@ withSPI f = bracket_    initSPI
                         f
                         
 -- Possible error results for I2C functions.
-actOnResult :: CUChar -> CString -> IO BS.ByteString
+actOnResult :: CUChar -> CStringLen -> IO BS.ByteString
 actOnResult rr buf = case rr of
     0x01 -> throwIO $ IOError Nothing IllegalOperation "I2C: " "Received an unexpected NACK." Nothing Nothing
     0x02 -> throwIO $ IOError Nothing IllegalOperation "I2C: " "Received Clock Stretch Timeout." Nothing Nothing 
     0x04 -> throwIO $ IOError Nothing IllegalOperation "I2C: " "Not all data was read." Nothing Nothing
-    0x00 -> BS.packCString buf --convert C buffer to a bytestring
+    0x00 -> BS.packCStringLen buf --convert C buffer to a bytestring
 
 
 -- Mapping raspberry pi pin number to internal bmc2835 pin number, ugly solution, but meh. Also, the existence of mutiple versions
@@ -269,7 +269,7 @@ readI2C :: Address -> Int -> IO BS.ByteString --reads num bytes from the specifi
 readI2C address num = allocaBytes (num+1) $ \buf -> do --is the +1 necessary??
     setI2cAddress address
     readresult <- c_readI2C buf (fromIntegral num)
-    actOnResult readresult buf
+    actOnResult readresult (buf, num)
 
 -- |Writes the data in the 'ByteString' to the specified 'Address', then issues a "repeated start" (with no prior stop) and then 
 -- reads num bytes from the same 'Address'. Necessary for devices that require such behavior, such as the MLX90620.
@@ -278,7 +278,7 @@ writeReadRSI2C address by num = BS.useAsCString by $ \bs -> do --marshall the re
     allocaBytes (num+1) $ \buf -> do	--allocate a buffer for the response
         setI2cAddress address
         readresult <- c_writeReadRSI2C bs (fromIntegral $ BS.length by) buf (fromIntegral num)
-        actOnResult readresult buf
+        actOnResult readresult (buf, num)
         
 -------------------------------------------- SPI functions -------------------------------------------------------------------------
 -- |Sets the chip select pin(s). When a transfer is made with 'transferSPI' or 'transferManySPI', the selected pin(s) will be 
