@@ -309,8 +309,8 @@ transferSPI input = fromIntegral <$> c_transferSPI (fromIntegral input)
 -- CS pins (as previously set by 'chipSelectSPI') during the transfer. Clocks 8 bit bytes out on MOSI, and simultaneously clocks in 
 -- data from MISO.
 transferManySPI :: [Word8] -> IO [Word8]
-transferManySPI input = BS.useAsCString (BS.pack input) $ \buf -> do --convert input list to bytestring and from there to CString
-    --returns the read bytes in buf. note that buf is actually ((length input)+1) bytes long, the final byte is a null terminator. 
-    --the null terminator is needed by BS.packCString later on, and is usefully supplied for free by BS.useAsCString.
-    c_transferManySPI buf (fromIntegral . length $ input) --
-    (BS.packCString buf) >>= return . BS.unpack -- translate back from a buffer to a bytestring to a [Word8]
+transferManySPI input = BS.useAsCStringLen (BS.pack input) $ \(buf,len) -> do --convert input list to bytestring and from there to CString
+    --returns the read bytes in buf. Uses CStringLen because the responses might have zero bytes and this will influence the result if a
+    --normal CString is used
+    c_transferManySPI buf (fromIntegral len) --
+    (BS.packCStringLen (buf,len)) >>= return . BS.unpack -- translate back from a buffer to a bytestring to a [Word8]
