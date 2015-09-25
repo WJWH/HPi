@@ -74,7 +74,7 @@ type Address = Word8 --adress of an I2C slave
 type LogicLevel = Bool
 
 -- |This describes which Chip Select pins are asserted (used in SPI communications).
-data SPIPin = CS1 | CS2 | CSBOTH | CSNONE deriving (Eq, Show, Enum)
+data SPIPin = CS0 | CS1 | CSBOTH | CSNONE deriving (Eq, Show, Enum)
 
 -- |Clock polarity (CPOL) for SPI transmissions.
 type CPOL = Bool
