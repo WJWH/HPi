@@ -18,7 +18,7 @@ cabal-version:       >=1.8
 library
   exposed-modules:     System.RaspberryPi.GPIO
   -- other-modules:       
-  build-depends:    base, bytestring
+  build-depends:    base < 5, bytestring < 0.11
   
 source-repository head
   type:     git
