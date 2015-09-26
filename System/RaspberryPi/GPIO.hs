@@ -171,7 +171,7 @@ withSPI f = bracket_    initSPI
                         stopSPI
                         f
                         
--- Possible error results for I2C functions.
+-- Possible error results for I2C functions. (not exported)
 actOnResult :: CUChar -> CStringLen -> IO BS.ByteString
 actOnResult rr buf = case rr of
     0x01 -> throwIO $ IOError Nothing IllegalOperation "I2C: " "Received an unexpected NACK." Nothing Nothing
@@ -255,9 +255,9 @@ setI2cBaudRate a = c_setBaudRateI2C $ fromIntegral a
 
 -- |Writes the data in the 'ByteString' to the specified I2C 'Address'. Throws an IOException if an error occurs.
 writeI2C :: Address -> BS.ByteString -> IO ()	--writes a bytestring to the specified address
-writeI2C address by = BS.useAsCString by $ \bs -> do
+writeI2C address by = BS.useAsCStringLen by $ \(bs,len) -> do
     setI2cAddress address
-    readresult <- c_writeI2C bs (fromIntegral $ BS.length by)
+    readresult <- c_writeI2C bs (fromIntegral len)
     case readresult of
         0x01 -> throwIO $ IOError Nothing IllegalOperation "I2C: " "Received an unexpected NACK." Nothing Nothing
         0x02 -> throwIO $ IOError Nothing IllegalOperation "I2C: " "Received Clock Stretch Timeout." Nothing Nothing 
@@ -274,10 +274,10 @@ readI2C address num = allocaBytes (num+1) $ \buf -> do --is the +1 necessary??
 -- |Writes the data in the 'ByteString' to the specified 'Address', then issues a "repeated start" (with no prior stop) and then 
 -- reads num bytes from the same 'Address'. Necessary for devices that require such behavior, such as the MLX90620.
 writeReadRSI2C :: Address -> BS.ByteString -> Int -> IO BS.ByteString
-writeReadRSI2C address by num = BS.useAsCString by $ \bs -> do --marshall the register-containing bytestring
-    allocaBytes (num+1) $ \buf -> do	--allocate a buffer for the response
+writeReadRSI2C address by num = BS.useAsCStringLen by $ \(bs,len) -> do --marshall the register-containing bytestring
+    allocaBytes num $ \buf -> do	--allocate a buffer for the response
         setI2cAddress address
-        readresult <- c_writeReadRSI2C bs (fromIntegral $ BS.length by) buf (fromIntegral num)
+        readresult <- c_writeReadRSI2C bs (fromIntegral len) buf (fromIntegral num)
         actOnResult readresult (buf, num)
         
 -------------------------------------------- SPI functions -------------------------------------------------------------------------
