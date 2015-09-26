@@ -7,14 +7,10 @@ import Data.Bits
 import qualified Data.ByteString as BS
 import Data.Word
 
---When compiling this, make sure to include the path to the bcm2835 library to the compilerto prevent
---"reference not found" errors, ie:
---ghc --make i2ctest.hs ~/bcm2835-1.45/src/bcm2835.o
---Obviouly, this assumes you installed the bcm2835 library in "~/bcm2835-1.45". Due to the library accessing
--- /dev/mem, the compiled program should be run with sudo.
+-- Due to the library accessing /dev/mem, the compiled program should be run with sudo.
 
---This program is designed to work with an 8*8 bicolor led matrix from Adafruit (http://www.adafruit.com/products/902)
---It makes some fancy patterns and demonstrates some more advanced Haskell concepts (mostly the StateT monad transformer)
+-- This program is designed to work with an 8*8 bicolor led matrix from Adafruit (http://www.adafruit.com/products/902)
+-- It makes some fancy patterns and demonstrates some more advanced Haskell concepts (mostly the StateT monad transformer)
 
 adress :: Address
 adress = 0x70 --change this of your I2C device has a different adress

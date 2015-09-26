@@ -5,14 +5,10 @@ import Data.Bits
 import qualified Data.ByteString as BS
 import Data.Word
 
---When compiling this, make sure to include the path to the bcm2835 library to the compilerto prevent
---"reference not found" errors, ie:
---ghc --make spitest.hs ~/bcm2835-1.45/src/bcm2835.o
---Obviouly, this assumes you installed the bcm2835 library in "~/bcm2835-1.45". Due to the library accessing
--- /dev/mem, the compiled program should be run with sudo.
+-- Due to the library accessing /dev/mem, the compiled program should be run with sudo.
 
---This program is designed to work with an FRAM memory circuit from Adafruit (http://www.adafruit.com/product/1897)
---The chip select pin of the FRAM should be on CS1
+-- This program is designed to work with an FRAM memory circuit from Adafruit (http://www.adafruit.com/product/1897)
+-- The chip select pin of the FRAM should be on CS0
 
 main = withGPIO . withSPI $ do
     chipSelectSPI CS0   --set the Chip select pin to the CS0 pin
