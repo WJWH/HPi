@@ -8,6 +8,7 @@ module System.RaspberryPi.GPIO (
     PinMode(..),
     LogicLevel,
     Address,
+    SPIBitOrder(..),
     SPIPin(..),
     CPOL,
     CPHA,
@@ -27,7 +28,9 @@ module System.RaspberryPi.GPIO (
     -- *SPI specific functions
     withSPI,
     chipSelectSPI,
+    setBitOrderSPI,
     setChipSelectPolaritySPI,
+    setClockDividerSPI,
     setDataModeSPI,
     transferSPI,
     transferManySPI
@@ -72,6 +75,9 @@ type Address = Word8 --adress of an I2C slave
 
 -- |Either high or low.
 type LogicLevel = Bool
+
+-- |Specifies the SPI data bit ordering.
+data SPIBitOrder = LSBFirst | MSBFirst
 
 -- |This describes which Chip Select pins are asserted (used in SPI communications).
 data SPIPin = CS0 | CS1 | CSBOTH | CSNONE deriving (Eq, Show, Enum)
@@ -134,8 +140,12 @@ foreign import ccall unsafe "bcm2835.h bcm2835_spi_transfern"      c_transferMan
 --Changes the chip select pins
 foreign import ccall unsafe "bcm2835.h bcm2835_spi_chipSelect"      c_chipSelectSPI :: CUChar -> IO ()
 
+--Set the bit order to be used for transmit and receive.
+foreign import ccall unsafe "bcm2835.h bcm2835_spi_setBitOrder"           c_setBitOrder :: CUChar -> IO ()
 --Sets whether SPI Chip Select pulls pins high or low.
 foreign import ccall unsafe "bcm2835.h bcm2835_spi_setChipSelectPolarity" c_setChipSelectPolarity :: CUChar -> CUChar -> IO ()
+--Sets the SPI clock divider and therefore the SPI clock speed.
+foreign import ccall unsafe "bcm2835.h bcm2835_spi_setClockDivider"       c_setClockDividerSPI :: CUShort -> IO ()
 --Sets the data mode used (phase/polarity)
 foreign import ccall unsafe "bcm2835.h bcm2835_spi_setDataMode"     c_setDataModeSPI :: CUChar -> IO ()
 
@@ -285,6 +295,17 @@ writeReadRSI2C address by num = BS.useAsCStringLen by $ \(bs,len) -> do --marsha
 -- asserted during the transfer. 
 chipSelectSPI :: SPIPin -> IO ()
 chipSelectSPI pin = c_chipSelectSPI (fromIntegral . fromEnum $ pin)
+
+-- |Sets the SPI clock divider and therefore the SPI clock speed.
+setClockDividerSPI :: Word16 -> IO ()
+setClockDividerSPI a = c_setClockDividerSPI $ fromIntegral a
+
+-- |Set the bit order to be used for transmit and receive. The bcm2835 SPI0 only supports MSBFirst,
+-- so if you select LSBFirst, the bytes will be reversed in software.
+-- The library defaults to MSBFirst.
+setBitOrderSPI :: SPIBitOrder -> IO ()
+setBitOrderSPI LSBFirst = c_setBitOrder 0
+setBitOrderSPI MSBFirst = c_setBitOrder 1
 
 -- |Sets the chip select pin polarity for a given pin(s). When a transfer is made with 'transferSPI' or 'transferManySPI', the 
 -- currently selected chip select pin(s) will be asserted to the LogicLevel supplied. When transfers are not happening, the chip 
