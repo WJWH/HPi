@@ -26,12 +26,15 @@ module System.RaspberryPi.GPIO (
     readI2C,
     writeReadRSI2C,
     -- *SPI specific functions
+    withAUXSPI,
     withSPI,
     chipSelectSPI,
     setBitOrderSPI,
     setChipSelectPolaritySPI,
+    setClockDividerAUXSPI,
     setClockDividerSPI,
     setDataModeSPI,
+    transferAUXSPI,
     transferSPI,
     transferManySPI
     ) where
@@ -54,7 +57,7 @@ import GHC.IO.Exception
 -- |This describes the pins on the Raspberry Pi boards. Since the BCM2835 SOC internally uses different numbers (and these numbers 
 -- differ between versions, the library internally translates this pin number to the correct number.
 data Pin =  -- |Pins for the P1 connector of the V2 revision of the Raspberry Pi
-            Pin03|Pin05|Pin07|Pin08|Pin10|Pin11|Pin12|Pin13|Pin15|Pin16|Pin18|Pin19|Pin21|Pin22|Pin23|Pin24|Pin26|
+            Pin03|Pin05|Pin07|Pin08|Pin10|Pin11|Pin12|Pin13|Pin15|Pin16|Pin18|Pin19|Pin21|Pin22|Pin23|Pin24|Pin26|Pin36|
             -- |Pins for the P5 connector of the V2 revision of the Raspberry Pi
             PinP5_03|PinP5_04|PinP5_05|PinP5_06|
             -- |Pins for the P1 connector of the V1 revision of the Raspberry Pi
@@ -80,7 +83,7 @@ type LogicLevel = Bool
 data SPIBitOrder = LSBFirst | MSBFirst
 
 -- |This describes which Chip Select pins are asserted (used in SPI communications).
-data SPIPin = CS0 | CS1 | CSBOTH | CSNONE deriving (Eq, Show, Enum)
+data SPIPin = CS0 | CS1 | CS2 | CSNONE deriving (Eq, Show, Enum)
 
 -- |Clock polarity (CPOL) for SPI transmissions.
 type CPOL = Bool
@@ -149,6 +152,17 @@ foreign import ccall unsafe "bcm2835.h bcm2835_spi_setClockDivider"       c_setC
 --Sets the data mode used (phase/polarity)
 foreign import ccall unsafe "bcm2835.h bcm2835_spi_setDataMode"     c_setDataModeSPI :: CUChar -> IO ()
 
+----------------------------------------- AUX SPI functions ------------------------------------------------------------------------
+--inits the AUX SPI pins
+foreign import ccall unsafe "bcm2835.h bcm2835_aux_spi_begin" initAUXSPI   :: IO Int
+--resets the AUX SPI pins
+foreign import ccall unsafe "bcm2835.h bcm2835_aux_spi_end"   stopAUXSPI   :: IO ()
+
+--Transfers one byte to and from the currently selected SPI slave
+foreign import ccall unsafe "bcm2835.h bcm2835_aux_spi_transfer"       c_transferAUXSPI :: CUChar -> IO CUChar
+
+--Sets the SPI clock divider and therefore the SPI clock speed.
+foreign import ccall unsafe "bcm2835.h bcm2835_aux_spi_setClockDivider"     c_setClockDividerAUXSPI :: CUShort -> IO ()
 
 ------------------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------ Exportable functions --------------------------------------------------------------------
@@ -231,6 +245,7 @@ getHwPin Pin22 = 25
 getHwPin Pin23 = 11
 getHwPin Pin24 = 8
 getHwPin Pin26 = 7
+getHwPin Pin36 = 16
 --for the P5 connector on V2 boards
 getHwPin PinP5_03 = 28
 getHwPin PinP5_04 = 29
@@ -335,3 +350,24 @@ transferManySPI input = BS.useAsCStringLen (BS.pack input) $ \(buf,len) -> do --
     --normal CString is used
     c_transferManySPI buf (fromIntegral len) --
     (BS.packCStringLen (buf,len)) >>= return . BS.unpack -- translate back from a buffer to a bytestring to a [Word8]
+        
+------------------------------------------ AUX SPI functions -----------------------------------------------------------------------
+
+-- |Any IO computation that uses the AUX SPI functionality using this library should be wrapped with this function; ie @withAUXSPI $ do foo@.
+-- It prepares the relevant pins for use with the SPI protocol and makes sure everything is safely returned to normal if an exception
+-- occurs. If you only use the GPIO pins for SPI, you can do @withGPIO . withAUXSPI $ do foo@ and it will work as expected. WARNING: 
+-- after this function returns, the SPI pins will be set to Input, so use 'setPinFunction' if you want to use them for output.
+withAUXSPI :: IO a -> IO a
+withAUXSPI f = bracket initAUXSPI
+                       (const stopAUXSPI)
+                       (\r -> if r==0 then throwIO ioe else f)
+                            where ioe = IOError Nothing IllegalOperation "AUXAPI: " "Unable to start AUXAPI." Nothing Nothing
+
+-- |Sets the AUX SPI clock divider and therefore the SPI clock speed.
+setClockDividerAUXSPI :: Word16 -> IO ()
+setClockDividerAUXSPI a = c_setClockDividerAUXSPI $ fromIntegral a
+
+-- |Transfers one byte to and from the SPI slave. Asserts the CS2 pin during the transfer. Clocks the 8 bit value out
+-- on MOSI, and simultaneously clocks in data from MISO. Returns the read data byte from the slave.
+transferAUXSPI :: Word8 -> IO Word8
+transferAUXSPI input = fromIntegral <$> c_transferAUXSPI (fromIntegral input)
