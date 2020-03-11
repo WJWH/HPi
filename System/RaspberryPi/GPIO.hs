@@ -279,7 +279,7 @@ setI2cBaudRate :: Word32 -> IO ()
 setI2cBaudRate a = c_setBaudRateI2C $ fromIntegral a
 
 -- |Writes the data in the 'ByteString' to the specified I2C 'Address'. Throws an IOException if an error occurs.
-writeI2C :: Address -> BS.ByteString -> IO ()	--writes a bytestring to the specified address
+writeI2C :: Address -> BS.ByteString -> IO () --writes a bytestring to the specified address
 writeI2C address by = BS.useAsCStringLen by $ \(bs,len) -> do
     setI2cAddress address
     readresult <- c_writeI2C bs (fromIntegral len)
@@ -300,7 +300,7 @@ readI2C address num = allocaBytes (num+1) $ \buf -> do --is the +1 necessary??
 -- reads num bytes from the same 'Address'. Necessary for devices that require such behavior, such as the MLX90620.
 writeReadRSI2C :: Address -> BS.ByteString -> Int -> IO BS.ByteString
 writeReadRSI2C address by num = BS.useAsCStringLen by $ \(bs,len) -> do --marshall the register-containing bytestring
-    allocaBytes num $ \buf -> do	--allocate a buffer for the response
+    allocaBytes num $ \buf -> do --allocate a buffer for the response
         setI2cAddress address
         readresult <- c_writeReadRSI2C bs (fromIntegral len) buf (fromIntegral num)
         actOnResult readresult (buf, num)
