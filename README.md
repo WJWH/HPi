@@ -9,7 +9,7 @@ HPi is a small library to access the GPIO pins on a Raspberry Pi from Haskell. I
 
 ===
 
-In order to compile programs including this library, you will need to have the `bcm2835` library installed. It can be found at http://airspayce.com/mikem/`bcm2835`/index.html. When performing the cabal install for HPi you may need to pass the `--extra-lib-dirs` and `--extra-include-dirs` flags if you have installed `bcm2835` at a non-standard path. This library has been tested to work with `bcm2835` version 1.63. Note that you cannot access the memory map without root privileges, programs should be run with sudo.
+In order to compile programs including this library, you will need to have the `bcm2835` library installed. It can be found at http://airspayce.com/mikem/bcm2835/index.html. When performing the cabal install for HPi you may need to pass the `--extra-lib-dirs` and `--extra-include-dirs` flags if you have installed `bcm2835` at a non-standard path. This library has been tested to work with `bcm2835` version 1.63. Note that you cannot access the memory map without root privileges, programs should be run with sudo.
 
 ===
 
