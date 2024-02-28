@@ -36,7 +36,16 @@ module System.RaspberryPi.GPIO (
     setDataModeSPI,
     transferAUXSPI,
     transferSPI,
-    transferManySPI
+    transferManySPI,
+    -- *PWM specific functions
+    -- |Allows control of 2 independent PWM channels. A limited subset of GPIO
+    -- pins can be connected to one of these 2 channels, allowing PWM control
+    -- of GPIO pins. You have to set the desired pin into a particular Alt Fun
+    -- to PWM output.
+    setClockPWM,
+    setModePWM,
+    setRangePWM,
+    setDataPWM
     ) where
 
 -- FFI wrapper over the I2C portions of the BCM2835 library by Mike McCauley, also some utility functions to
@@ -163,6 +172,19 @@ foreign import ccall unsafe "bcm2835.h bcm2835_aux_spi_transfer"       c_transfe
 
 --Sets the SPI clock divider and therefore the SPI clock speed.
 foreign import ccall unsafe "bcm2835.h bcm2835_aux_spi_setClockDivider"     c_setClockDividerAUXSPI :: CUShort -> IO ()
+
+------------------------------------------- PWM functions --------------------------------------------------------------------------
+-- sets the PWM clock
+foreign import ccall unsafe "bcm2835.h bcm2835_pwm_set_clock" c_setClockPWM :: CUInt -> IO ()
+
+-- sets the PWM pulse ratio to emit to DATA/RANGE
+foreign import ccall unsafe "bcm2835.h bcm2835_pwm_set_data" c_setDataPWM :: CUChar -> CUInt -> IO ()
+
+-- sets the mode of the given PWM channel
+foreign import ccall unsafe "bcm2835.h bcm2835_pwm_set_mode" c_setModePWM :: CUChar -> CUChar -> CUChar -> IO ()
+
+-- sets the maximum range of the PWM output
+foreign import ccall unsafe "bcm2835.h bcm2835_pwm_set_range" c_setRangePWM :: CUChar -> CUInt -> IO ()
 
 ------------------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------ Exportable functions --------------------------------------------------------------------
@@ -371,3 +393,22 @@ setClockDividerAUXSPI a = c_setClockDividerAUXSPI $ fromIntegral a
 -- on MOSI, and simultaneously clocks in data from MISO. Returns the read data byte from the slave.
 transferAUXSPI :: Word8 -> IO Word8
 transferAUXSPI input = fromIntegral <$> c_transferAUXSPI (fromIntegral input)
+
+-------------------------------------------- PWM functions -------------------------------------------------------------------------
+
+-- |Sets the PWM clock divisor, to control the basic PWM pulse widths. 
+setClockPWM :: Word32 -> IO ()
+setClockPWM a = c_setClockPWM $ fromIntegral a
+
+-- |Sets the mode of the given PWM channel, allowing you to control the PWM mode and enable/disable that channel 
+setModePWM :: Word8 -> Word8 -> Word8 -> IO ()
+setModePWM a b c = c_setModePWM (fromIntegral a) (fromIntegral b) (fromIntegral c)
+
+-- |Sets the maximum range of the PWM output. The data value can vary between 0 and this range to control PWM output 
+setRangePWM :: Word8 -> Word32 -> IO ()
+setRangePWM a b = c_setRangePWM (fromIntegral a) (fromIntegral b)
+
+-- |Sets the PWM pulse ratio to emit to DATA/RANGE, where RANGE is set by 'setRangePWM'.
+setDataPWM :: Word8 -> Word32 -> IO ()
+setDataPWM a b = c_setDataPWM (fromIntegral a) (fromIntegral b)
+
