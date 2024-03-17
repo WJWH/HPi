@@ -65,7 +65,9 @@ import GHC.IO.Exception
 --------------------------------------------- Data types ---------------------------------------------------------------------------
 -- |This describes the pins on the Raspberry Pi boards. Since the BCM2835 SOC internally uses different numbers (and these numbers 
 -- differ between versions, the library internally translates this pin number to the correct number.
-data Pin =  -- |Pins for the P1 connector of the V2 revision of the Raspberry Pi
+data Pin =  -- ROMES:TODO: I don't know how to classify these
+            Pin32|Pin33|Pin35|
+            -- |Pins for the P1 connector of the V2 revision of the Raspberry Pi
             Pin03|Pin05|Pin07|Pin08|Pin10|Pin11|Pin12|Pin13|Pin15|Pin16|Pin18|Pin19|Pin21|Pin22|Pin23|Pin24|Pin26|Pin36|
             -- |Pins for the P5 connector of the V2 revision of the Raspberry Pi
             PinP5_03|PinP5_04|PinP5_05|PinP5_06|
@@ -231,6 +233,10 @@ actOnResult rr buf = case rr of
 -- would hamper the simplicity of having writePin and readPin be simple IO actions). As this function isn't exported anyway, the
 -- user should never be troubled by all this.
 getHwPin :: Pin -> CUChar
+--ROMES:TODO:Document classification
+getHwPin Pin32 = 12
+getHwPin Pin33 = 13
+getHwPin Pin35 = 19
 --P1 connector on V1 boards
 getHwPin PinV1_03 = 0
 getHwPin PinV1_05 = 1
