@@ -66,7 +66,7 @@ import GHC.IO.Exception
 -- |This describes the pins on the Raspberry Pi boards. Since the BCM2835 SOC internally uses different numbers (and these numbers 
 -- differ between versions, the library internally translates this pin number to the correct number.
 data Pin =  -- |Pins for the P1 connector of the V2 revision of the Raspberry Pi
-            Pin03|Pin05|Pin07|Pin08|Pin10|Pin11|Pin12|Pin13|Pin15|Pin16|Pin18|Pin19|Pin21|Pin22|Pin23|Pin24|Pin26|Pin36|
+            Pin03|Pin05|Pin07|Pin08|Pin10|Pin11|Pin12|Pin13|Pin15|Pin16|Pin18|Pin19|Pin21|Pin22|Pin23|Pin24|Pin26|Pin32|Pin33|Pin35|Pin36|
             -- |Pins for the P5 connector of the V2 revision of the Raspberry Pi
             PinP5_03|PinP5_04|PinP5_05|PinP5_06|
             -- |Pins for the P1 connector of the V1 revision of the Raspberry Pi
@@ -267,6 +267,9 @@ getHwPin Pin22 = 25
 getHwPin Pin23 = 11
 getHwPin Pin24 = 8
 getHwPin Pin26 = 7
+getHwPin Pin32 = 12
+getHwPin Pin33 = 13
+getHwPin Pin35 = 19
 getHwPin Pin36 = 16
 --for the P5 connector on V2 boards
 getHwPin PinP5_03 = 28
